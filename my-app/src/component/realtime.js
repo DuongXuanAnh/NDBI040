@@ -1,4 +1,4 @@
-import { onValue, ref, set, push } from 'firebase/database';
+import { onValue, ref, set, push, child, get } from 'firebase/database';
 
 import { db } from "../config/firebase";
 
@@ -105,9 +105,31 @@ export const Realtime = () => {
         set(orderItem3Ref, orderItem3);
       }
 
+
+
+    const readRealTimeDB = async () => {
+
+      // Zobrazit tabulku User
+      // const usersRef = ref(db, "users");
+      // onValue(usersRef, (snapshot) => {
+      //   const usersData = snapshot.val();
+      //   const usersList = [];
+
+      //   for (const [key, value] of Object.entries(usersData)) {
+      //     usersList.push({ id: key, ...value });
+      //   }
+      //   console.log(usersList);
+      // });
+      //--------------------------------------------------------------------------------------
+
+     
+      
+    }
+
     return (
         <div>
             <button onClick={ () => createRealTimeDB() }>Create realtime DB</button>
+            <button onClick={ () => readRealTimeDB() }>Read realtime DB</button>
         </div>
     )
 }
