@@ -1,7 +1,7 @@
 
 
 import { db_firestore } from "../config/firebase";
-import { collection, addDoc, getDocs } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
 
 export const FireStore = () => {
 
@@ -89,15 +89,35 @@ export const FireStore = () => {
     };
 
 
+    const getUserIdsByCity = async (city) => {
+        const usersRef = collection(db_firestore, "users");
+        const usersQuery = query(usersRef, where("address.city", "==", city));
+        const usersSnapshot = await getDocs(usersQuery);
+        return usersSnapshot.docs.map((doc) => doc.id);
+      }
 
     const readFireStoreDB = async () => {
-        // Get all users from the users collection
-        const usersRef = collection(db_firestore, "users");
-        const usersSnapshot = await getDocs(usersRef);
-        usersSnapshot.forEach((userDoc) => {
-        console.log(userDoc.id, "=>", userDoc.data());
-});
+
+    // Get all orders placed by users who live in a specific city
+
+       // Get all orders from users who live in "Anytown USA"
+        const ordersRef = collection(db_firestore, "orders");
+        const ordersQuery = query(
+        ordersRef,
+        where("user_id", "in", [
+            // Get user IDs of users who live in "Anytown USA"
+            ...(await getUserIdsByCity("Anytown USA")),
+        ])
+        );
+        const ordersSnapshot = await getDocs(ordersQuery);
+        ordersSnapshot.forEach((orderDoc) => {
+        console.log(orderDoc.id, "=>", orderDoc.data());
+        });
+
+      
     };
+
+
 
     return (
         <div>
