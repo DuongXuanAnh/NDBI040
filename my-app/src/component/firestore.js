@@ -1,7 +1,7 @@
 
 
 import { db_firestore } from "../config/firebase";
-import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 
 export const FireStore = () => {
 
@@ -97,10 +97,12 @@ export const FireStore = () => {
       }
 
     const readFireStoreDB = async () => {
-
-    // Get all orders placed by users who live in a specific city
-
-       // Get all orders from users who live in "Anytown USA"
+        // return all orders placed by users who live in the city "Anytown USA"
+        // Retrieves a reference to the "orders" collection in Firestore.
+        // Creates a query that filters the orders collection based on the following conditions:
+        // The "user_id" field of each order document must be in an array of user IDs returned by the getUserIdsByCity() function.
+        // Executes the query using getDocs(), which retrieves a QuerySnapshot containing all the order documents that meet the query criteria.
+        // Loops through each order document in the snapshot, and logs the order ID, total price, order date, and user name to the console.
         const ordersRef = collection(db_firestore, "orders");
         const ordersQuery = query(
         ordersRef,
@@ -110,11 +112,16 @@ export const FireStore = () => {
         ])
         );
         const ordersSnapshot = await getDocs(ordersQuery);
-        ordersSnapshot.forEach((orderDoc) => {
-        console.log(orderDoc.id, "=>", orderDoc.data());
-        });
+        for (const orderDoc of ordersSnapshot.docs) {
+        // Get the user's name for this order
+        const userId = orderDoc.data().user_id;
+        const userRef = doc(db_firestore, "users", userId);
+        const userDoc = await getDoc(userRef);
+        const userName = userDoc.data().name;
 
-      
+        // Print the order ID, total price, order date, and user name to the console
+        console.log(orderDoc.id, "=>", "Total Price:", orderDoc.data().total_price, "Order Date:", orderDoc.data().order_date.toDate(), "User Name:", userName);
+        }
     };
 
 
