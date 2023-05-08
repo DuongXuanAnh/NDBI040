@@ -6,14 +6,17 @@ import { db } from "../config/firebase";
 export const Realtime = () => {
 
     const createRealTimeDB = () => {
-    
+
+        // V první řadě se definují reference na různé uzly v databázi ("users", "orders", "products" a "orderItems") pomocí funkce "ref()" a připojení k databázovému objektu "db".
         // Write data to the database
+        
         const usersRef = ref(db, "users");
         const ordersRef = ref(db, "orders");
         const productsRef = ref(db, "products");
         const orderItemsRef = ref(db, "orderItems");
-    
+        
         // Add data to the users node
+        // Poté se vytváří objekt "user1", který obsahuje jméno, e-mailovou adresu a adresu uživatele.
         const user1 = {
           name: "John Doe",
           email: "john.doe@example.com",
@@ -23,7 +26,10 @@ export const Realtime = () => {
             zip: "12345",
           },
         };
+
+        // Dále se pomocí funkce "push()" vytváří nová reference pro uživatele v uzlu "users".
         const user1Ref = push(usersRef);
+        // Na závěr se pomocí funkce "set()" zapíše objekt "user1" do nové reference v uzlu "users" v databázi.
         set(user1Ref, user1);
     
         const user2 = {
@@ -107,46 +113,67 @@ export const Realtime = () => {
       };
 
 
-
+      // Tento kód slouží k získání seznamu ID uživatelů, kteří mají v adresách uvedeno určité město. 
+      // Funkce "getUserIdsByCity()" vrací seznam ID uživatelů, kteří mají město v adrese uvedeno a vrací ho jako Promise.
       const getUserIdsByCity = async (city) => {
+
+        // Nejprve se vytvoří reference na kolekci "users" v Firestore databázi pomocí "ref()"
         const usersRef = ref(db, "users");
+        // následně se pomocí funkce "query()" sestaví dotaz na databázi pro všechny uživatele, 
+        // kteří mají v adrese uvedeno dané město. To se provádí pomocí metod "orderByChild()" a "equalTo()", 
+        // které se používají pro filtrování dat podle konkrétní vlastnosti a její hodnoty.
         const usersQuery = query(usersRef, orderByChild("address/city"), equalTo(city));
+
+        // Poté se používá asynchronní metoda "get()" k získání dat z Firestore databáze podle výše uvedeného dotazu. 
+        // Funkce "get()" vrátí výsledky v podobě "snapshot" objektu.
         const snapshot = await get(usersQuery);
       
         const userIds = [];
         snapshot.forEach((childSnapshot) => {
           userIds.push(childSnapshot.key);
         });
-      
+        // Nakonec se vrací pole "userIds" obsahující seznam ID uživatelů, kteří mají dané město v adrese.
         return userIds;
       };
       
       const readRealTimeDB = async () => {
-         // Get user IDs of users who live in "Anytown USA"
-    const userIds = await getUserIdsByCity("Anytown USA");
+        // Tento kód získává seznam ID uživatelů, kteří žijí v městě "Anytown USA", 
+        // a následně na základě tohoto seznamu získává všechny objednávky, které byly vytvořeny uživateli z tohoto seznamu.
 
-    // Retrieve all orders placed by users who live in the city "Anytown USA"
-    const ordersRef = ref(db, "orders");
-    const ordersQuery = query(ordersRef, orderByChild("user_id"), startAt(userIds[0]), endAt(userIds[userIds.length - 1]));
 
-    const ordersSnapshot = await get(ordersQuery);
-    ordersSnapshot.forEach(async (orderSnapshot) => {
-        const orderData = orderSnapshot.val();
+        // Nejprve se volá funkce "getUserIdsByCity()", která vrací seznam ID uživatelů, kteří žijí v městě "Anytown USA".
+          const userIds = await getUserIdsByCity("Anytown USA");
 
-        // Check if the order's user_id is in the list of user IDs
-        if (userIds.includes(orderData.user_id)) {
-            // Get the user's name for this order
-            const userRef = ref(db, `users/${orderData.user_id}`);
-            const userSnapshot = await get(userRef);
-            const userName = userSnapshot.val().name;
+        // Poté se vytvoří reference na kolekci "orders" v Firestore databázi pomocí "ref()"
+          const ordersRef = ref(db, "orders");
 
-            // Convert the date string to a JavaScript Date object
-            const orderDate = new Date(orderData.order_date);
+        // Následně se pomocí funkce "query()" sestaví dotaz na databázi pro všechny objednávky, 
+        // které byly vytvořeny uživateli z tohoto seznamu ID. 
+        // To se provádí pomocí metod "orderByChild()", "startAt()" a "endAt()". 
+        // Metoda "startAt()" se používá k určení, od kterého ID uživatele začít, a metoda "endAt()" k určení, kde skončit.
+          const ordersQuery = query(ordersRef, orderByChild("user_id"), startAt(userIds[0]), endAt(userIds[userIds.length - 1]));
+          
+        // Poté se používá asynchronní metoda "get()" k získání dat z Firestore databáze podle výše uvedeného dotazu. 
+        // Funkce "get()" vrátí výsledky v podobě "ordersSnapshot" objektu.
+          const ordersSnapshot = await get(ordersQuery);
 
-            // Print the order ID, total price, order date, and user name to the console
-            console.log(orderSnapshot.key, "=>", "Total Price:", orderData.total_price, "Order Date:", orderDate, "User Name:", userName);
-        }
-    });
+
+          // Pro každou objednávku v "ordersSnapshot" se používá metoda "forEach()" k projití všech objednávek a ověření,
+          //  zda objednávka patří uživateli, který žije v "Anytown USA".
+          ordersSnapshot.forEach(async (orderSnapshot) => {
+              const orderData = orderSnapshot.val();
+
+              // Pokud ano, tak se pomocí reference "userRef" získává informace o uživateli z databáze,
+              // a to pomocí asynchronní metody "get()". Poté se získá jméno uživatele z "userSnapshot".
+              if (userIds.includes(orderData.user_id)) {
+                  const userRef = ref(db, `users/${orderData.user_id}`);
+                  const userSnapshot = await get(userRef);
+                  const userName = userSnapshot.val().name;
+                  const orderDate = new Date(orderData.order_date);
+
+                  console.log(orderSnapshot.key, "=>", "Total Price:", orderData.total_price, "Order Date:", orderDate, "User Name:", userName);
+              }
+          });
       };
 
     return (
