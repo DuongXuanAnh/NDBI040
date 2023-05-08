@@ -122,28 +122,31 @@ export const Realtime = () => {
       };
       
       const readRealTimeDB = async () => {
-        // Get user IDs of users who live in "Anytown USA"
-        const userIds = await getUserIdsByCity("Anytown USA");
-      
-        // Retrieve all orders placed by users who live in the city "Anytown USA"
-        const ordersRef = ref(db, "orders");
-        const ordersQuery = query(ordersRef, orderByChild("user_id"), startAt(userIds[0]), endAt(userIds[userIds.length - 1]));
-      
-        const ordersSnapshot = await get(ordersQuery);
-        ordersSnapshot.forEach(async (orderSnapshot) => {
-          const orderData = orderSnapshot.val();
-      
-          // Check if the order's user_id is in the list of user IDs
-          if (userIds.includes(orderData.user_id)) {
+         // Get user IDs of users who live in "Anytown USA"
+    const userIds = await getUserIdsByCity("Anytown USA");
+
+    // Retrieve all orders placed by users who live in the city "Anytown USA"
+    const ordersRef = ref(db, "orders");
+    const ordersQuery = query(ordersRef, orderByChild("user_id"), startAt(userIds[0]), endAt(userIds[userIds.length - 1]));
+
+    const ordersSnapshot = await get(ordersQuery);
+    ordersSnapshot.forEach(async (orderSnapshot) => {
+        const orderData = orderSnapshot.val();
+
+        // Check if the order's user_id is in the list of user IDs
+        if (userIds.includes(orderData.user_id)) {
             // Get the user's name for this order
             const userRef = ref(db, `users/${orderData.user_id}`);
             const userSnapshot = await get(userRef);
             const userName = userSnapshot.val().name;
-      
+
+            // Convert the date string to a JavaScript Date object
+            const orderDate = new Date(orderData.order_date);
+
             // Print the order ID, total price, order date, and user name to the console
-            console.log(orderSnapshot.key, "=>", "Total Price:", orderData.total_price, "Order Date:", orderData.order_date, "User Name:", userName);
-          }
-        });
+            console.log(orderSnapshot.key, "=>", "Total Price:", orderData.total_price, "Order Date:", orderDate, "User Name:", userName);
+        }
+    });
       };
 
     return (
