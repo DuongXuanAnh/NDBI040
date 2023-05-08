@@ -88,22 +88,47 @@ export const FireStore = () => {
           const orderItem3Ref = await addDoc(collection(db_firestore, "orderItems"), orderItem3);
     };
 
-
+    // získání ID uživatelů (users) v Firestore databázi, kteří žijí v určitém městě. 
     const getUserIdsByCity = async (city) => {
+
+      // V první řadě se definuje reference na uzel "users" v Firestore databázi 
+      // pomocí funkce "collection()" a připojení k databázovému objektu "db_firestore".
         const usersRef = collection(db_firestore, "users");
+
+      // Poté se vytváří dotaz (query) pro získání uživatelů, kteří žijí v určitém městě ("city"). 
+      // Dotaz obsahuje filtr "where()", který vrací uživatele, kde "address.city" odpovídá zadanému městu.
         const usersQuery = query(usersRef, where("address.city", "==", city));
+
+      // Poté se pomocí funkce "getDocs()" získají snapshoty všech uživatelů, kteří odpovídají filtrům v dotazu.
         const usersSnapshot = await getDocs(usersQuery);
+
+      // Výsledkem je pole ID všech uživatelů, kteří splňují požadovaný filtr. 
+      // Tento seznam se vytvoří pomocí funkce "map()", která prochází všechny snapshoty a pro každý snapshot vrátí jeho ID pomocí funkce "id".
         return usersSnapshot.docs.map((doc) => doc.id);
       }
 
     const readFireStoreDB = async () => {
-        // return all orders placed by users who live in the city "Anytown USA"
-        // Retrieves a reference to the "orders" collection in Firestore.
-        // Creates a query that filters the orders collection based on the following conditions:
-        // The "user_id" field of each order document must be in an array of user IDs returned by the getUserIdsByCity() function.
-        // Executes the query using getDocs(), which retrieves a QuerySnapshot containing all the order documents that meet the query criteria.
-        // Loops through each order document in the snapshot, and logs the order ID, total price, order date, and user name to the console.
+        // získat objednávky (orders) z Firestore databáze, které mají uživatele (user) s určitou adresou (Anytown USA)
+
+        // V první řadě se definuje reference na uzel "orders" v 
+        // Firestore databázi pomocí funkce "collection()" a připojení k databázovému objektu "db_firestore".
         const ordersRef = collection(db_firestore, "orders");
+
+        // Poté se vytváří dotaz (query) pro získání objednávek pro uživatele, kteří žijí v určitém městě ("Anytown USA").
+        // Dotaz obsahuje filtry a vrací objednávky, kde "user_id" odpovídá ID uživatelů, kteří žijí v daném městě.
+        // Filtr vrací objednávky (orders), kde hodnota vlastnosti "user_id" je obsažena v seznamu ID uživatelů (users), 
+        // kteří žijí v určitém městě (Anytown USA).
+        // Konkrétně funkce "where()" vytváří filtr pro vlastnost "user_id", 
+        // který porovnává hodnoty vlastnosti "user_id" v objednávkách s hodnotami v seznamu ID uživatelů, 
+        // které jsou vráceny funkcí "getUserIdsByCity()". 
+        // Seznam ID uživatelů, kteří žijí v městě "Anytown USA", 
+        // je vrácen asynchronně z funkce "getUserIdsByCity()" pomocí klíčového slova "await". 
+        // Funkce "getUserIdsByCity()" vrací seznam ID uživatelů, kteří splňují filtr pro adresu s daným městem.
+        // Seznam ID uživatelů je obalován do pole pomocí zápisu "[...]", což umožňuje přidávat prvky pole do seznamu ID. 
+        // Poté se toto pole předává jako druhý parametr do funkce "in()", která vyhledává hodnoty "user_id" v objednávkách, 
+        // které jsou obsaženy v seznamu ID uživatelů.
+
+        // Celkově tedy tento kód slouží k filtrování objednávek v Firestore databázi na základě adresy uživatelů, kteří žijí v určitém městě.
         const ordersQuery = query(
         ordersRef,
         where("user_id", "in", [
@@ -111,19 +136,27 @@ export const FireStore = () => {
             ...(await getUserIdsByCity("Anytown USA")),
         ])
         );
+
+        // Poté se pomocí funkce "getDocs()" získají snapshoty všech objednávek, které odpovídají filtrům v dotazu.
         const ordersSnapshot = await getDocs(ordersQuery);
+
+        // V cyklu "for" se projdou všechny snapshoty objednávek a pro každou objednávku
+        // se získá ID uživatele, který tuto objednávku provedl, pomocí funkce "data()".
         for (const orderDoc of ordersSnapshot.docs) {
-        // Get the user's name for this order
         const userId = orderDoc.data().user_id;
+
+        // Poté se získá reference na dokument s uživatelem s tímto ID v uzlu "users" 
+        // pomocí funkce "doc()", a následně se získá snapshot tohoto dokumentu pomocí funkce "getDoc()".
         const userRef = doc(db_firestore, "users", userId);
         const userDoc = await getDoc(userRef);
+        // V získaném snapshotu se získá jméno uživatele pomocí funkce "data()".
         const userName = userDoc.data().name;
 
-        // Print the order ID, total price, order date, and user name to the console
+        // Nakonec se vytiskne do konzole ID objednávky, celková cena, datum objednávky
+        // a jméno uživatele pro každou objednávku, která splňuje požadovaný filtr.
         console.log(orderDoc.id, "=>", "Total Price:", orderDoc.data().total_price, "Order Date:", orderDoc.data().order_date.toDate(), "User Name:", userName);
         }
     };
-
 
 
     return (
