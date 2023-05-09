@@ -113,67 +113,73 @@ export const Realtime = () => {
       };
 
 
-      // Tento kód slouží k získání seznamu ID uživatelů, kteří mají v adresách uvedeno určité město. 
-      // Funkce "getUserIdsByCity()" vrací seznam ID uživatelů, kteří mají město v adrese uvedeno a vrací ho jako Promise.
-      const getUserIdsByCity = async (city) => {
+      // -------------------------------------------------------------------------------------------------
 
-        // Nejprve se vytvoří reference na kolekci "users" v Firestore databázi pomocí "ref()"
-        const usersRef = ref(db, "users");
-        // následně se pomocí funkce "query()" sestaví dotaz na databázi pro všechny uživatele, 
-        // kteří mají v adrese uvedeno dané město. To se provádí pomocí metod "orderByChild()" a "equalTo()", 
-        // které se používají pro filtrování dat podle konkrétní vlastnosti a její hodnoty.
-        const usersQuery = query(usersRef, orderByChild("address/city"), equalTo(city));
+      // Funkce fetchData načte data z databáze Firebase a převede je na pole objektů, 
+      // kde každý objekt reprezentuje jeden záznam v databázi. 
+      // Každý objekt obsahuje id a hodnoty vlastností získané z Firebase pomocí childSnapshot.val().
 
-        // Poté se používá asynchronní metoda "get()" k získání dat z Firestore databáze podle výše uvedeného dotazu. 
-        // Funkce "get()" vrátí výsledky v podobě "snapshot" objektu.
-        const snapshot = await get(usersQuery);
       
-        const userIds = [];
+      // childSnapshot v kódu odkazuje na jedno dítě datového uzlu v Realtime Database. 
+      // Při použití metody snapshot.forEach() v kódu, funkce iteruje přes všechny potomky 
+      // daného uzlu a v každém kroku cyklu se childSnapshot odkazuje na aktuální potomka.
+      // childSnapshot je typicky používán pro získání dat potomka z Realtime Database pomocí metody childSnapshot.val(),
+      //  která vrací hodnoty potomka jako objekt.
+      
+      const fetchData = async (nodeRef) => {
+        const snapshot = await get(nodeRef);
+        const data = [];
         snapshot.forEach((childSnapshot) => {
-          userIds.push(childSnapshot.key);
+          data.push({ id: childSnapshot.key, ...childSnapshot.val() });
         });
-        // Nakonec se vrací pole "userIds" obsahující seznam ID uživatelů, kteří mají dané město v adrese.
-        return userIds;
+        return data;
       };
+
+
+      // Funkce calculateRevenuePerUser spočítá celkové příjmy za každého uživatele v databázi
+      // na základě dat získaných pomocí fetchData. Iteruje přes všechny uživatele a pro každého z nich
+      // projde všechny objednávky a záznamy v objednávkách a spočítá celkové příjmy pro každého uživatele. 
+      // Výsledkem je objekt revenuePerUser, který obsahuje jméno, email a celkové příjmy za každého uživatele.
+      const calculateRevenuePerUser = (users, orders, orderItems) => {
+        const revenuePerUser = {};
       
-      const readRealTimeDB = async () => {
-        // Tento kód získává seznam ID uživatelů, kteří žijí v městě "Anytown USA", 
-        // a následně na základě tohoto seznamu získává všechny objednávky, které byly vytvořeny uživateli z tohoto seznamu.
-
-
-        // Nejprve se volá funkce "getUserIdsByCity()", která vrací seznam ID uživatelů, kteří žijí v městě "Anytown USA".
-          const userIds = await getUserIdsByCity("Anytown USA");
-
-        // Poté se vytvoří reference na kolekci "orders" v Firestore databázi pomocí "ref()"
-          const ordersRef = ref(db, "orders");
-
-        // Následně se pomocí funkce "query()" sestaví dotaz na databázi pro všechny objednávky, 
-        // které byly vytvořeny uživateli z tohoto seznamu ID. 
-        // To se provádí pomocí metod "orderByChild()", "startAt()" a "endAt()". 
-        // Metoda "startAt()" se používá k určení, od kterého ID uživatele začít, a metoda "endAt()" k určení, kde skončit.
-          const ordersQuery = query(ordersRef, orderByChild("user_id"), startAt(userIds[0]), endAt(userIds[userIds.length - 1]));
-          
-        // Poté se používá asynchronní metoda "get()" k získání dat z Firestore databáze podle výše uvedeného dotazu. 
-        // Funkce "get()" vrátí výsledky v podobě "ordersSnapshot" objektu.
-          const ordersSnapshot = await get(ordersQuery);
-
-
-          // Pro každou objednávku v "ordersSnapshot" se používá metoda "forEach()" k projití všech objednávek a ověření,
-          //  zda objednávka patří uživateli, který žije v "Anytown USA".
-          ordersSnapshot.forEach(async (orderSnapshot) => {
-              const orderData = orderSnapshot.val();
-
-              // Pokud ano, tak se pomocí reference "userRef" získává informace o uživateli z databáze,
-              // a to pomocí asynchronní metody "get()". Poté se získá jméno uživatele z "userSnapshot".
-              if (userIds.includes(orderData.user_id)) {
-                  const userRef = ref(db, `users/${orderData.user_id}`);
-                  const userSnapshot = await get(userRef);
-                  const userName = userSnapshot.val().name;
-                  const orderDate = new Date(orderData.order_date);
-
-                  console.log(orderSnapshot.key, "=>", "Total Price:", orderData.total_price, "Order Date:", orderDate, "User Name:", userName);
+        for (const user of users) {
+          let totalRevenue = 0;
+      
+          for (const order of orders) {
+            if (order.user_id === user.id) {
+              for (const orderItem of orderItems) {
+                if (orderItem.order_id === order.id) {
+                  totalRevenue += order.total_price * orderItem.quantity;
+                }
               }
-          });
+            }
+          }
+      
+          revenuePerUser[user.id] = {
+            name: user.name,
+            email: user.email,
+            revenue: totalRevenue,
+          };
+        }
+      
+        return revenuePerUser;
+      };
+
+      // Funkce readRealTimeDB získá referenci na datové uzly v Realtime Database, 
+      // načte data pomocí fetchData a vypočítá celkové příjmy za každého uživatele pomocí calculateRevenuePerUser. 
+      // Výsledky jsou vypsány na konzoli pomocí console.log().
+      const readRealTimeDB = async () => {
+        const usersRef = ref(db, "users");
+        const ordersRef = ref(db, "orders");
+        const orderItemsRef = ref(db, "orderItems");
+
+        const usersData = await fetchData(usersRef);
+        const ordersData = await fetchData(ordersRef);
+        const orderItemsData = await fetchData(orderItemsRef);
+
+        const revenuePerUser = calculateRevenuePerUser(usersData, ordersData, orderItemsData);
+        console.log("Revenue per user:", revenuePerUser);
       };
 
     return (
