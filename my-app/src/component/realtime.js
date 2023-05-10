@@ -1,4 +1,4 @@
-import { onValue, ref, set, push, child, get, query, orderByChild, equalTo, startAt, endAt, on, update } from 'firebase/database';
+import { onValue, ref, set, push, child, get, query, orderByChild, equalTo, startAt, endAt, on, update, remove } from 'firebase/database';
 
 
 import { db } from "../config/firebase";
@@ -245,10 +245,31 @@ export const Realtime = () => {
 
     const updateRealTimeDB = () => {
 
-      const userId = "-NV4q8t-UBU7agyfa_mj";
+      const userId = "-NV5ybUrxsUcmL3duDc3";
       const userRef = ref(db, `users/${userId}`);
       update(userRef, { name: "David Duong" });
 
+    }
+
+    const deleteRealTimeDB = () => {
+
+
+      const userId = "-NV5ybV-abtBhiE-pp8J";
+      const userRef = ref(db, `users/${userId}`);
+    
+      get(userRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          remove(userRef)
+            .then(() => {
+              console.log("User deleted successfully!");
+            })
+            .catch((error) => {
+              console.error("Error deleting user:", error);
+            });
+        } else {
+          console.log("User does not exist.");
+        }
+      });
     }
 
     return (
@@ -256,6 +277,7 @@ export const Realtime = () => {
             <button onClick={ () => createRealTimeDB() }>Create realtime DB</button>
             <button onClick={ () => readRealTimeDB() }>Read realtime DB</button>
             <button onClick={ () => updateRealTimeDB() }>Update realtime DB</button>
+            <button onClick={ () => deleteRealTimeDB() }>Delete realtime DB</button>
             
         </div>
     )

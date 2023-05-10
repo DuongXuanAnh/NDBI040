@@ -1,5 +1,5 @@
 import { db_firestore } from "../config/firebase";
-import { collection, addDoc, getDocs, query, where, doc, getDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where, doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 
 export const FireStore = () => {
 
@@ -195,10 +195,27 @@ export const FireStore = () => {
     };
 
 
+    const updateFirestoreDB = async () => {
+        // I want to update name in firestore
+        const userId = "78P2o0rFVk9z335MSM6E";
+        const newName = "David Duong";
+        const userRef = doc(db_firestore, "users", userId);
+        await updateDoc(userRef, { name: newName });
+    };
+
+    const deleteFirestoreDB = async () => {
+      const userId = "gxY02IvwZ4SHZYNaiMHH";
+      const userRef = doc(db_firestore, "users", userId);
+      await deleteDoc(userRef);
+    }
+
+
     return (
         <div>
             <button onClick={ () => createFirestoreDB() }>Create firestore DB</button>
             <button onClick={ () => readFireStoreDB() }>Read firestore DB</button>
+            <button onClick={ () => updateFirestoreDB() }>Update firestore DB</button>
+            <button onClick={ () => deleteFirestoreDB() }>Delete firestore DB</button>
         </div>
     )
 }
