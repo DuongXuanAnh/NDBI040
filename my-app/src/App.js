@@ -1,7 +1,7 @@
 
 import './App.css';
+import { FireStore } from './component/firestore';
 import { Realtime } from './component/realtime';
-import { getDatabase, onValue, ref, set, push } from 'firebase/database';
 
 function App() {
 
@@ -9,6 +9,7 @@ function App() {
   return (
     <div className="App">
       <Realtime />
+      <FireStore />
     </div>
   );
 }

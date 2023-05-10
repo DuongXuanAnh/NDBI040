@@ -1,5 +1,3 @@
-
-
 import { db_firestore } from "../config/firebase";
 import { collection, addDoc, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 
@@ -86,63 +84,114 @@ export const FireStore = () => {
             quantity: 3,
           };
           const orderItem3Ref = await addDoc(collection(db_firestore, "orderItems"), orderItem3);
-    };
 
-    // -------------------------------------------------------------------------------------------------
-
-    // Funkce iteruje přes všechny uživatele a pro každého z nich projde všechny objednávky
-    //  a záznamy v objednávkách a spočítá celkové příjmy pro každého uživatele. 
-    // Výsledkem je objekt revenuePerUser, který obsahuje jméno, email a celkové příjmy za každého uživatele.
-    const calculateRevenuePerUser = (users, orders, orderItems) => {
-      const revenuePerUser = {};
-    
-      for (const user of users) {
-        let totalRevenue = 0;
-    
-        for (const order of orders) {
-          if (order.user_id === user.id) {
-            for (const orderItem of orderItems) {
-              if (orderItem.order_id === order.id) {
-                totalRevenue += order.total_price * orderItem.quantity;
-              }
-            }
-          }
-        }
-    
-        revenuePerUser[user.id] = {
-          name: user.name,
-          email: user.email,
-          revenue: totalRevenue,
+          const user3 = {
+            name: "Alice Smith",
+            email: "alice.smith@example.com",
+            address: {
+                street: "789 Elm St",
+                city: "Anytown USA",
+                zip: "98765",
+            },
         };
-      }
-      return revenuePerUser;
+        const user3Ref = await addDoc(collection(db_firestore, "users"), user3);
+        
+        const user4 = {
+            name: "Bob Johnson",
+            email: "bob.johnson@example.com",
+            address: {
+                street: "321 Pine St",
+                city: "Anytown USA",
+                zip: "67890",
+            },
+        };
+        const user4Ref = await addDoc(collection(db_firestore, "users"), user4);
+        
+        // Add data to the orders collection
+        const order3 = {
+            user_id: user3Ref.id,
+            total_price: 30.0,
+            order_date: new Date("2023-05-02"),
+        };
+        const order3Ref = await addDoc(collection(db_firestore, "orders"), order3);
+        
+        const order4 = {
+            user_id: user4Ref.id,
+            total_price: 100.0,
+            order_date: new Date("2023-05-01"),
+        };
+        const order4Ref = await addDoc(collection(db_firestore, "orders"), order4);
+        
+        // Add data to the products collection
+        const product4 = {
+            name: "Dress",
+            description: "Elegant dress for special occasions",
+            price: 79.99,
+        };
+        const product4Ref = await addDoc(collection(db_firestore, "products"), product4);
+        
+        const product5 = {
+            name: "Suit",
+            description: "Professional suit for men",
+            price: 129.99,
+        };
+        const product5Ref = await addDoc(collection(db_firestore, "products"), product5);
+        
+        const product6 = {
+            name: "Running shoes",
+            description: "Lightweight and comfortable running shoes",
+            price: 49.99,
+        };
+        const product6Ref = await addDoc(collection(db_firestore, "products"), product6);
+        
+        // Add data to the orderItems collection
+        const orderItem4 = {
+            order_id: order3Ref.id,
+            product_id: product4Ref.id,
+            quantity: 1,
+        };
+        const orderItem4Ref = await addDoc(collection(db_firestore, "orderItems"), orderItem4);
+        
+        const orderItem5 = {
+            order_id: order3Ref.id,
+            product_id: product6Ref.id,
+            quantity: 2,
+        };
+        const orderItem5Ref = await addDoc(collection(db_firestore, "orderItems"), orderItem5);
+        
+        const orderItem6 = {
+            order_id: order4Ref.id,
+            product_id: product5Ref.id,
+            quantity: 1,
+        };
+        const orderItem6Ref = await addDoc(collection(db_firestore, "orderItems"), orderItem6);
     };
 
+    const getUserIdsByCity = async (city) => {
+        const usersRef = collection(db_firestore, "users");
+        const usersQuery = query(usersRef, where("address.city", "==", city));
+        const usersSnapshot = await getDocs(usersQuery);
+        return usersSnapshot.docs.map((doc) => doc.id);
+      }
 
-
-    // Funkce readFirestoreDB získá referenci na kolekce v Firestore, 
-    // načte data pomocí getDocs() a uloží je do proměnných usersData, ordersData a orderItemsData. 
-    // Poté zavolá funkci calculateRevenuePerUser s těmito daty a uloží výsledky do proměnné revenuePerUser. 
-    // Nakonec se výsledky vypíší na konzoli pomocí console.log().
-
-    // Kód používá asynchronní funkce, aby čekal na dokončení operací získávání dat z Firestore. 
-    // Používá se také metoda map(), která prochází každý prvek v poli a vrátí pole nových prvků.
-    //  V kódu je použita pro transformaci dat na formát, který se používá v calculateRevenuePerUser.
     const readFireStoreDB = async () => {
-      const usersSnapshot = await getDocs(collection(db_firestore, "users"));
-      const usersData = usersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    
-      const ordersSnapshot = await getDocs(collection(db_firestore, "orders"));
-      const ordersData = ordersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    
-      const orderItemsSnapshot = await getDocs(collection(db_firestore, "orderItems"));
-      const orderItemsData = orderItemsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-    
-      const revenuePerUser = calculateRevenuePerUser(usersData, ordersData, orderItemsData);
-      console.log("Revenue per user:", revenuePerUser);
+        const ordersRef = collection(db_firestore, "orders");
+        const ordersQuery = query(
+        ordersRef,
+        where("user_id", "in", [
+            ...(await getUserIdsByCity("Anytown USA")),
+        ])
+        );
+
+        const ordersSnapshot = await getDocs(ordersQuery);
+
+        for (const orderDoc of ordersSnapshot.docs) {
+        const userId = orderDoc.data().user_id;
+        const userRef = doc(db_firestore, "users", userId);
+        const userDoc = await getDoc(userRef);
+        const userName = userDoc.data().name;
+        console.log(orderDoc.id, "=>", "Total Price:", orderDoc.data().total_price, "Order Date:", orderDoc.data().order_date.toDate(), "User Name:", userName);
+        }
     };
 
 
