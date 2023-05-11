@@ -1,14 +1,12 @@
-import { onValue, ref, set, push, child, get, query, orderByChild, equalTo, startAt, endAt, on, update, remove } from 'firebase/database';
-
 
 import { db } from "../config/firebase";
+import { onValue, ref, set, push, child, get, query, orderByChild, equalTo, startAt, endAt, on, update, remove } from 'firebase/database';
 
-
-export const Realtime = () => {
+export const Realtime = () =>{
 
     const createRealTimeDB = () => {
-
-        // V první řadě se definují reference na různé uzly v databázi ("users", "orders", "products" a "orderItems") pomocí funkce "ref()" a připojení k databázovému objektu "db".
+        // V první řadě se definují reference na různé uzly v databázi ("users", "orders", "products" a "orderItems")
+        // pomocí funkce "ref()" a připojení k databázovému objektu "db".
         // Write data to the database
         
         const usersRef = ref(db, "users");
@@ -203,74 +201,86 @@ export const Realtime = () => {
         };
         const orderItem6Ref = push(orderItemsRef);
         set(orderItem6Ref, orderItem6);
+    };
+
+
+    const fetchData = async (nodeRef) => {
+        const snapshot = await get(nodeRef);
+        const data = [];
+        snapshot.forEach((childSnapshot) => {
+          data.push({ id: childSnapshot.key, ...childSnapshot.val() });
+        });
+        return data;
       };
-
-
-      // -------------------------------------------------------------------------------------------------
-
-      const readRealTimeDB = async () => {
-        // Vytvoření reference na uzel "orders" v databázi
-        const ordersRef = ref(db, "orders");
-        // Vytvoření dotazu, který získá všechny dětské uzly uzlu "orders"
-        const ordersQuery = query(ordersRef, orderByChild("total_price"));
-        // Získání snapshotu výsledků dotazu pomocí funkce "get()"
-        const ordersSnapshot = await get(ordersQuery);
       
-        // Iterace přes každý dětský uzel uzlu "orders"
-        for (const orderId in ordersSnapshot.val()) {
-          // Extrahování dat objednávky ze snapshotu
-          const order = ordersSnapshot.val()[orderId];
-          // Extrahování ID uživatele z dat objednávky
-          const userId = order.user_id;
-          // Vytvoření reference na odpovídající uzel uživatele v databázi
-          const userRef = ref(db, "users/" + userId);
-          // Získání snapshotu uzlu uživatele pomocí funkce "get()"
-          const userSnapshot = await get(userRef);
-          // Extrahování jména uživatele ze snapshotu
-          const userName = userSnapshot.val().name;
-          // Vypsání dat objednávky a jména uživatele do konzole pomocí funkce "console.log()"
-          console.log(
-            orderId,
-            "=>",
-            "Celková cena:",
-            order.total_price,
-            "Datum objednávky:",
-            order.order_date,
-            "Jméno uživatele:",
-            userName
-          );
+      const calculateRevenuePerUser = (users, orders, orderItems) => {
+        const revenuePerUser = {};
+      
+        for (const user of users) {
+          let totalRevenue = 0;
+      
+          for (const order of orders) {
+            if (order.user_id === user.id) {
+              for (const orderItem of orderItems) {
+                if (orderItem.order_id === order.id) {
+                  totalRevenue += order.total_price * orderItem.quantity;
+                }
+              }
+            }
+          }
+      
+          revenuePerUser[user.id] = {
+            name: user.name,
+            email: user.email,
+            revenue: totalRevenue,
+          };
         }
+      
+        return revenuePerUser;
       };
+
+    const readRealTimeDB = async () => {
+     
+        const usersRef = ref(db, "users");
+        const ordersRef = ref(db, "orders");
+        const orderItemsRef = ref(db, "orderItems");
+
+        const usersData = await fetchData(usersRef);
+        const ordersData = await fetchData(ordersRef);
+        const orderItemsData = await fetchData(orderItemsRef);
+
+        const revenuePerUser = calculateRevenuePerUser(usersData, ordersData, orderItemsData);
+        console.log("Revenue per user:", revenuePerUser);
+
+
+    };
 
 
     const updateRealTimeDB = () => {
-
-      const userId = "-NV5ybUrxsUcmL3duDc3";
-      const userRef = ref(db, `users/${userId}`);
-      update(userRef, { name: "David Duong" });
-
-    }
+        const userId = "-NVB27WstKewYIkn_xH2";
+        const userRef = ref(db, `users/${userId}`);
+        update(userRef, { name: "Jan Novak" });
+    };
 
     const deleteRealTimeDB = () => {
-
-
-      const userId = "-NV5ybV-abtBhiE-pp8J";
-      const userRef = ref(db, `users/${userId}`);
+        const userId = "-NVB27WstKewYIkn_xH2";
+        const userRef = ref(db, `users/${userId}`);
+      
+        get(userRef).then((snapshot) => {
+          if (snapshot.exists()) {
+            remove(userRef)
+              .then(() => {
+                console.log("User deleted successfully!");
+              })
+              .catch((error) => {
+                console.error("Error deleting user:", error);
+              });
+          } else {
+            console.log("User does not exist.");
+          }
+        });
+    };
     
-      get(userRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          remove(userRef)
-            .then(() => {
-              console.log("User deleted successfully!");
-            })
-            .catch((error) => {
-              console.error("Error deleting user:", error);
-            });
-        } else {
-          console.log("User does not exist.");
-        }
-      });
-    }
 
     return (
         <div>
@@ -281,5 +291,5 @@ export const Realtime = () => {
             
         </div>
     )
-}
 
+}
