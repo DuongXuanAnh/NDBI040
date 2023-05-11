@@ -1,3 +1,24 @@
+# 1. query
+## Firestore
+       // Na první řádce se vytvoří odkaz na kolekci "users" v databázi Firestore. Proměnná usersRef obsahuje tuto referenci.
+      //         Na druhé řádce se provede dotaz na databázi Firestore pomocí getDocs(usersRef) a vrátí se výsledek jako objekt usersSnapshot. Tento objekt obsahuje snímek (snapshot) všech dokumentů v kolekci "users".
+      //         Na třetí řádce se používá metoda forEach na usersSnapshot, což iteruje přes každý dokument ve snímku.
+      //         Uvnitř každé iterace se na konzoli vypíše ID dokumentu pomocí userDoc.id a data dokumentu pomocí userDoc.data(). Tento kód slouží k výpisu identifikátoru (ID) a dat každého dokumentu v kolekci "users".
+        const usersRef = collection(db_firestore, "users");
+        const usersSnapshot = await getDocs(usersRef);
+        usersSnapshot.forEach((userDoc) => {
+        console.log(userDoc.id, "=>", userDoc.data());
+
+## Realtime
+      const usersRef = ref(db, "users");
+        onValue(usersRef, (snapshot) => {
+          const usersData = snapshot.val();
+          const usersList = [];
+
+          for (const [key, value] of Object.entries(usersData)) {
+            usersList.push({ id: key, ...value });
+          }
+      console.log(usersList);
 # 2. query
 ## Firestore
     // získání ID uživatelů (users) v Firestore databázi, kteří žijí v určitém městě. 
