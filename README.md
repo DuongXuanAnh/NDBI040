@@ -1,15 +1,36 @@
 # 1. query
 ## Firestore
-       // Na první řádce se vytvoří odkaz na kolekci "users" v databázi Firestore. Proměnná usersRef obsahuje tuto referenci.
-      //         Na druhé řádce se provede dotaz na databázi Firestore pomocí getDocs(usersRef) a vrátí se výsledek jako objekt usersSnapshot. Tento objekt obsahuje snímek (snapshot) všech dokumentů v kolekci "users".
-      //         Na třetí řádce se používá metoda forEach na usersSnapshot, což iteruje přes každý dokument ve snímku.
-      //         Uvnitř každé iterace se na konzoli vypíše ID dokumentu pomocí userDoc.id a data dokumentu pomocí userDoc.data(). Tento kód slouží k výpisu identifikátoru (ID) a dat každého dokumentu v kolekci "users".
+      // Na první řádce se vytvoří odkaz na kolekci "users" v databázi Firestore.
+      // Proměnná usersRef obsahuje tuto referenci.
+      // Na druhé řádce se provede dotaz na databázi Firestore pomocí getDocs(usersRef) 
+      // a vrátí se výsledek jako objekt usersSnapshot. Tento objekt obsahuje snímek (snapshot) všech dokumentů v kolekci "users".
+      // Na třetí řádce se používá metoda forEach na usersSnapshot, což iteruje přes každý dokument ve snímku.
+      // Uvnitř každé iterace se na konzoli vypíše ID dokumentu pomocí userDoc.id a data dokumentu pomocí userDoc.data(). 
+      // Tento kód slouží k výpisu identifikátoru (ID) a dat každého dokumentu v kolekci "users".
+
         const usersRef = collection(db_firestore, "users");
         const usersSnapshot = await getDocs(usersRef);
         usersSnapshot.forEach((userDoc) => {
         console.log(userDoc.id, "=>", userDoc.data());
 
 ## Realtime
+
+    Nejprve je vytvořena reference na kolekci "users" v databázi pomocí ref(db, "users"). 
+    Proměnná usersRef obsahuje tuto referenci.
+    Poté je použita metoda onValue(usersRef, (snapshot) => {...}), 
+    která naslouchá na změny v hodnotách usersRef. 
+    Tato metoda přijímá funkci, která se vykoná při změně hodnot.
+    V těle této funkce se nejprve získají data ze snímku pomocí snapshot.val() 
+    a uloží se do proměnné usersData. 
+    Tato proměnná obsahuje objekt s daty všech uživatelů.
+    Dále je vytvořen prázdný pole usersList, 
+    které slouží k ukládání informací o uživatelích.
+    Následuje cyklus for...of, který iteruje přes všechny položky v objektu usersData. 
+    V každé iteraci se získá klíč (ID uživatele) a hodnota (data uživatele) pomocí Object.entries(usersData).
+    V každé iteraci se vytvoří nový objekt, 
+    který obsahuje klíč id (ID uživatele) a rozbalené hodnoty ...value (data uživatele). 
+    Tento objekt se přidá do pole usersList pomocí usersList.push(...)
+
       const usersRef = ref(db, "users");
         onValue(usersRef, (snapshot) => {
           const usersData = snapshot.val();
