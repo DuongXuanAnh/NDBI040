@@ -5,6 +5,9 @@ import { onValue, ref, set, push, child, get, query, orderByChild, equalTo, star
 export const Realtime = () =>{
 
     const createRealTimeDB = () => {
+      const startTime = performance.now(); // Zaznamená začátek měření
+
+      
         // V první řadě se definují reference na různé uzly v databázi ("users", "orders", "products" a "orderItems")
         // pomocí funkce "ref()" a připojení k databázovému objektu "db".
         // Write data to the database
@@ -201,6 +204,10 @@ export const Realtime = () =>{
         };
         const orderItem6Ref = push(orderItemsRef);
         set(orderItem6Ref, orderItem6);
+
+        const endTime = performance.now(); // Zaznamená konec měření
+        const duration = endTime - startTime; // Vypočítá dobu trvání dotazu
+        console.log("Výsledky měření:", duration, "ms"); 
     };
 
 
@@ -240,7 +247,8 @@ export const Realtime = () =>{
       };
 
     const readRealTimeDB = async () => {
-     
+        const startTime = performance.now(); // Zaznamená začátek měření
+       
         const usersRef = ref(db, "users");
         const ordersRef = ref(db, "orders");
         const orderItemsRef = ref(db, "orderItems");
@@ -252,20 +260,33 @@ export const Realtime = () =>{
         const revenuePerUser = calculateRevenuePerUser(usersData, ordersData, orderItemsData);
         console.log("Revenue per user:", revenuePerUser);
 
+        const endTime = performance.now(); // Zaznamená konec měření
+
+
+        const duration = endTime - startTime; // Vypočítá dobu trvání dotazu
+        console.log("Výsledky měření:", duration, "ms"); 
 
     };
 
 
     const updateRealTimeDB = () => {
+
+        const startTime = performance.now(); // Zaznamená začátek měření
         const userId = "-NVB27WstKewYIkn_xH2";
         const userRef = ref(db, `users/${userId}`);
         update(userRef, { name: "Jan Novak" });
+        const endTime = performance.now(); // Zaznamená konec měření
+        const duration = endTime - startTime; // Vypočítá dobu trvání dotazu
+        console.log("Výsledky měření:", duration, "ms"); 
     };
 
     const deleteRealTimeDB = () => {
+
+      const startTime = performance.now(); // Zaznamená začátek měření
+
         const userId = "-NVB27WstKewYIkn_xH2";
         const userRef = ref(db, `users/${userId}`);
-      
+
         get(userRef).then((snapshot) => {
           if (snapshot.exists()) {
             remove(userRef)
@@ -279,6 +300,10 @@ export const Realtime = () =>{
             console.log("User does not exist.");
           }
         });
+
+        const endTime = performance.now(); // Zaznamená konec měření
+        const duration = endTime - startTime; // Vypočítá dobu trvání dotazu
+        console.log("Výsledky měření:", duration, "ms"); 
     };
     
 
